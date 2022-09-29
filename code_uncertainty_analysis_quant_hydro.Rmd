@@ -1,0 +1,262 @@
+---
+title: "Hands-on Uncertainty Analysis"
+author: "Arnald Puy"
+output: html_document
+date: "26th October 2022"
+header-includes:
+  - \usepackage[font=footnotesize]{caption}
+  - \usepackage{dirtytalk}
+  - \usepackage{booktabs}
+  - \usepackage{tabulary}
+  - \usepackage{enumitem}
+  - \usepackage{lmodern}
+  - \usepackage[T1]{fontenc}
+  - \usepackage{tikz}
+link-citations: yes
+bibliography: biblio_code_qh.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Install and load required packages
+You should have the packages `sensobol` [@puy2022a], `data.table` [@Dowle2020] and `tidyverse` [@wickham2019] installed in your R environment to reproduce the results of this session. To install them, remove the hash character from the first line of the code snippet below and run the code.
+
+```{r, results="hide", message=FALSE, warning=FALSE}
+
+# install.packages(c("sensobol", "data.table", "tidyverse"))
+
+library("sensobol")
+library("data.table")
+library("tidyverse")
+
+```
+
+# Uncertainty analysis
+
+An uncertainty analysis (UA) aims at quantifying how the uncertainty in the model inputs (e.g., in parameters, boundary conditions, mathematical formulations) affect the model output. Uncertainty can derive from measurement error, natural variation, inherent randomness or lack of knowledge (epistemic uncertainty). Often an uncertainty analysis goes alongside a sensitivity analysis (SA), which aims at informing which inputs convey the most uncertainty to the output [@saltelli2008]. Both UA/SA increase the transparency and quality of the modelling process and are especially recommended if the model aims at guiding decisions in the real world [@saltelli2020a].
+
+An uncertainty analysis requires the analyst to:
+
+* Define which inputs of the model are treated as uncertain.
+
+* Design a sample matrix. This sample matrix will reflect your model's uncertain space and will be formed by $N$ rows and $k$ columns. $N$ is a number chosen by the analyst (often $N > 10,000$) and reflects the sample size, the number of times that the model will ran on different combination of values for the uncertain inputs, and $k$ reflects the number of uncertain inputs. 
+
+* Run the model throughout the sample matrix in order to get a vector with the model output.
+
+* Describe the uncertainty in the output with descriptive statistics (average value, median, quantiles, confidence intervals, etc) and appropriate plots.
+
+Here we will show how to conduct an UA/SA analysis in the R environment. First, we define the main settings of the UA, which will remain the same throughout the exercise unless stated otherwise. We define the sample size as $N=2^7=128$, the required matrix as "A" (we will see later on what does this mean) and the type of sample matrix as "QRN", meaning that we will use quasi-random numbers to build the sample matrix (we will see why later on). 
+
+```{r main_settings}
+
+# Sample size
+N <- 2^7
+
+# Required matrices
+matrices <- "A"
+
+# Type of sample matrix
+type <- "QRN"
+
+```
+
+Now let us get into the meat of the matter.
+
+## Dummy example (1)
+
+Let us start by assuming that our model has two uncertain inputs, which we will name $x_1$ and $x_2$:
+
+```{r params}
+params <- c("x1", "x2")
+```
+
+We then create the sample matrix with the function `sobol_matrices`, from the `sensobol` package [@puy2022a].
+
+```{r sobol_matrix, dependson="main_settings"}
+mat <- sobol_matrices(matrices = matrices, N = N, params = params, type = type)
+```
+
+Let us inspect the resulting matrix: first, we print the matrix, and then we plot it:
+
+```{r, inspect_matrix, dependson="sobol_matrix"}
+mat
+plot(mat[, "x1"], mat[, "x2"])
+
+```
+
+Each row in the matrix just printed corresponds to a point in the plot. There are 128 rows, so we have 128 points. These points are your sampling points in the model's uncertain space, and can be thought of as coordinates. If you have a look at the first row of the matrix printed above, you will see that $x_1=x_2=0.5$: this means that the model will compute the output in that row by assuming that $x_1=x_2=0.5$. In the second row, the model will assume that $x_1=0.75$ and $x_2=0.25$, and so on until the 128th row.
+
+In this example we can graphically represent the model's uncertain space with a plane because our model has two dimensions and therefore is a two-dimensional model. The $x-$ and the $y$-axis in the plot represent the first and the second columns of the sample matrix. When dealing with $k$-dimensional models, where $k>3$, a graphical representation of the model's uncertain space like the one above is not possible because we live in a three-dimensional world!.
+
+We have built this sample matrix using Quasi-Random Numbers (QRN). But how does the sample matrix look like if we use another sampling method? Let us compare QRN with Latin Hypercube Sampling (LHS) and random numbers (R).
+
+First, we define a vector with the three different sampling methods available in `sensobol`.
+
+```{r sampling_types, dependson="main_settings"}
+all_types <- c("QRN", "LHS", "R")
+
+```
+
+We then loop over all these methods to create a matrix for each sampling method. The we name the slots and plot the resulting matrices for a better visualization. The code is the following:
+
+```{r plot_sampling_types, dependson="sampling_types", fig.height=3}
+
+# Loop
+prove <- lapply(all_types, function(type)
+  sobol_matrices(matrices = matrices, N = N, params = params, type = type))
+
+# Name
+names(prove) <- all_types
+
+# Plot
+lapply(prove, data.table) %>%
+  rbindlist(., idcol = "Method") %>%
+  ggplot(., aes(x1, x2)) +
+  geom_point() +
+  facet_wrap(~Method)
+
+```
+
+Which differences do you see between the sampling space created by LHS, QRN and R?
+
+<div class="alert alert-info">
+  <strong>Take-home information: </strong> QRN is the preferred sampling method in uncertainty and sensitivity analysis because it leaves smaller unexplored volumes and hence maps more effectively the uncertain space. However, note that random methods might be better to compute sensitivity indices when the model under examination has important high-order terms [@kucherenko2011]. We will explore sensitivity analysis later on.
+</div>
+
+## Dummy example (2)
+
+In this example we will use a very simple model with three uncertain parameters. Let us first name our parameters $x_1$, $x_2$ and $x_3$:
+
+```{r params2}
+
+params <- c("x1", "x2", "x3")
+```
+
+And create again the sample matrix with the function `sobol_matrices` from the `sensobol` package:
+
+```{r sobol_matrix2, dependson="main_settings"}
+
+mat <- sobol_matrices(matrices = matrices, N = N, params = params, type = type)
+```
+
+We now define the model. We will use a very simple polynomial:
+
+$$y = 3x_1^2 + 2x_1x_2 -2x_3$$
+In the next code snippet we code the polynomial in a function, which we label `dummy_fun`. Note that the function needs to be coded as to run rowwise throughout the sample matrix. 
+
+```{r model}
+
+dummy_fun <- function(mat) 3 * mat[, "x1"]^2 + 2 * mat[, "x1"] * mat[, "x2"] - 2 * mat[, "x3"]
+```
+
+We execute the model in the sample matrix and print the output.
+
+```{r run_model1}
+y <- dummy_fun(mat)
+y
+```
+
+As you can see, the model output is a vector whose length equals the number of rows of the sample matrix, 128 in this case. Each element in the vector shows the output of the model after taking in specific combinations of $x_1$, $x_2$ and $x_3$ values.  
+
+With this vector we can conduct a proper uncertainty analysis of the model output. We can first visualize the distribution of the output with an histogram. This is easy to do with the `plot_uncertainty` function of the `sensobol` package:
+
+```{r plot_uncertainty1, fig.height=5, fig.width=5}
+
+plot_uncertainty(Y = y, N = N) + 
+  geom_histogram(fill = "grey", color = "black") # This last line of code is just to fill the histogram with grey colour
+
+```
+
+Once we get an idea of the shape of the distribution, we can compute some statistical measures to describe the data. Which descriptive statistics will you select in this case?
+
+<div class="alert alert-danger">
+  <strong>Take-home information: </strong> When the output distribution is not normal (i.e., when it is not Gaussian, not symmetric around the mean; in other words, when the distribution does not look like a "bell curve"), the mean or the standard deviation may not be the most appropriate measures of central tendency and spread. Other options, such as the median, quartiles, the interquartile range (the difference between the 75th and the 25th quartile), may be better suited. Always plot your data to see how it is distributed.
+</div>
+
+We can compute the mean, median, interquartile range and quantiles of the model output as follows:
+
+```{r desc_stats}
+mean(y)
+median(y)
+IQR(y)
+quantile(y)
+
+```
+
+## An hydrological example: calculation of irrigation water withdrawals
+
+In this section we will conduct a full-fledged uncertainty analysis of one of the formulae used to model irrigation water withdrawals. This model requires information on the extension of irrigation, crop coefficient, evapotranspiration, precipitation and irrigation efficiency [@Puy2021b]. It reads as follows:
+
+$$y = \frac{A ( ET_c - P)}{E}\,,$$
+where $y$ represent irrigation water withdrawals [m$^3$], A is the extension of irrigation [m$^2$], $ET_c$ is the crop evapotranspiration [m], P is the precipitation [m] and $E$ is the irrigation efficiency [-].
+
+Let us assume that we do not know the exact value of any of these inputs, but that we have done our research and agreed that their uncertainty can be fairly approximated with the distributions presented in the Table below.
+
+| Parameter | Description | Distribution |
+|:--------- | :-----------|:-------------|
+| $A$         | Irrigated area | $\mathcal{U}(15, 20)$ |
+| $ET_c$        | Crop evapotranspiration | $\mathcal{N}(0.4, 0.1)$ |
+| $P$        | Precipitation | $\mathcal{U}(0, 0.1)$ |
+| $E$        | Irrigation efficiency | $\mathcal{U}(0.4, 0.6)$ |
+
+Furthermore, in this example we will slightly vary the settings because we will conduct an uncertainty jointly with a sensitivity analysis: firstly, we will increase the sample size to $N=2^{11}$ to ensure a thorough sampling of the uncertain space. Secondly, we will define a sampling design to conduct a variance-based sensitivity analysis with the most accurate estimators, @saltelli2010b for first-order indices and @jansen1999 for total-order indices. This requires a sampling design based on an $\bf{A}$, a $\bf{B}$ and a $\bf{A_B^{(i)}}$ matrices. An explanation of why is this design needed in variance-based SA is beyond the scope of this lecture and we direct the reader to @lopiano2021, @puy2022f and @puy2022a for further details. And thirdly, we will bootstrap the sensitivity indices 1000 times in order to get confidence intervals.
+
+```{r setting2}
+
+# Sample size
+N <- 2^11
+
+# Required matrices
+matrices <- c("A", "B", "AB")
+
+# Type of sample matrix
+type <- "QRN"
+
+# Bootstrap
+boot <- TRUE
+
+# Number of bootstrap samples
+R <- 10^3
+```
+
+As in the previous examples, we first define a vector with the name of our uncertain inputs: 
+
+```{r params3}
+params <- c("A", "ET_c", "P", "E")
+```
+
+We then create the sample matrix:
+
+```{r sobol_matrix3, dependson="main_settings"}
+mat <- sobol_matrices(matrices = matrices, N = N, params = params, type = type)
+```
+
+Let us inspect the first ten rows of the resulting matrix: 
+
+```{r, inspect_matrix3, dependson="sobol_matrix"}
+head(mat)
+```
+
+Note that, as with the other examples, all the inputs are uniformly distributed in $[0, 1]$. Since our inputs have other distributions (see table above), we need to apply a quantile transformation to bring each input to its appropriate distribution. This is done as follows:
+
+```{r quantile}
+
+mat[, "A"] <- qunif(mat[, "A"], min = 15, max = 20) # for a uniform distribution.
+mat[, "ET_c"] <- qnorm(mat[, "ET_c"], mean = 0.4, sd = 0.1) # for a normal distribution.
+mat[, "P"] <- qunif(mat[, "P"], min = 0, max = 0.1)
+mat[, "E"] <- qunif(mat[, "E"], min = 0.4, max = 0.6)
+
+```
+
+Now let us plot the first ten rows to inspect the resulting transformed matrix:
+
+```{r inspect4}
+
+head(mat)
+```
+
+
+
+# References
