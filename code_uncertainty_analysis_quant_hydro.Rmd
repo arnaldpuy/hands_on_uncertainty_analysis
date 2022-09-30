@@ -192,7 +192,7 @@ In this section we will conduct a full-fledged uncertainty analysis of one of th
 $$y = \frac{A ( ET_c - P)}{E}\,,$$
 where $y$ represent irrigation water withdrawals [m$^3$], A is the extension of irrigation [m$^2$], $ET_c$ is the crop evapotranspiration [m], P is the precipitation [m] and $E$ is the irrigation efficiency [-].
 
-Let us assume that we do not know the exact value of any of these inputs, but that we have done our research and agreed that their uncertainty can be fairly approximated with the distributions presented in the Table below.
+Let us assume that we do not know the exact value of any of these inputs, but that we have done our research and agreed that their uncertainty can be fairly approximated with the distributions presented in the Table 1 below.
 
 | Parameter | Description | Distribution |
 |:--------- | :-----------|:-------------|
@@ -200,6 +200,8 @@ Let us assume that we do not know the exact value of any of these inputs, but th
 | $ET_c$        | Crop evapotranspiration | $\mathcal{N}(0.4, 0.1)$ |
 | $P$        | Precipitation | $\mathcal{U}(0, 0.1)$ |
 | $E$        | Irrigation efficiency | $\mathcal{U}(0.4, 0.6)$ |
+
+Table: Table 1. Distribution of the uncertain inputs for the irrigation water withdrawal model.
 
 Furthermore, in this example we will slightly vary the settings because we will conduct an uncertainty jointly with a sensitivity analysis: firstly, we will increase the sample size to $N=2^{11}$ to ensure a thorough sampling of the uncertain space. Secondly, we will define a sampling design to conduct a variance-based sensitivity analysis with the most accurate estimators, @saltelli2010b for first-order indices and @jansen1999 for total-order indices. This requires a sampling design based on an $\bf{A}$, a $\bf{B}$ and a $\bf{A_B^{(i)}}$ matrices. An explanation of why is this design needed in variance-based SA is beyond the scope of this lecture and we direct the reader to @lopiano2021, @puy2022f and @puy2022a for further details. And thirdly, we will bootstrap the sensitivity indices 1000 times in order to get confidence intervals.
 
@@ -233,7 +235,7 @@ We then create the sample matrix:
 mat <- sobol_matrices(matrices = matrices, N = N, params = params, type = type)
 ```
 
-Let us inspect the first ten rows of the resulting matrix: 
+Let us inspect the first five rows of the resulting matrix: 
 
 ```{r, inspect_matrix3, dependson="sobol_matrix"}
 head(mat)
@@ -250,13 +252,13 @@ mat[, "E"] <- qunif(mat[, "E"], min = 0.4, max = 0.6)
 
 ```
 
-Now let us plot the first ten rows to inspect the resulting transformed matrix:
+Now let us plot the first five rows to inspect the resulting transformed matrix:
 
 ```{r inspect4}
 
 head(mat)
 ```
 
-
+As you can see, the inputs are no longer distributed in $\mathcal{U}(0, 1)$, but follow the distributions listed in Table 1.
 
 # References

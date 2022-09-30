@@ -3,7 +3,7 @@
 
 # Install and load required packages
 
-You should have the packages `sensobol` \[@puy2022a\], `data.table`
+You should have the packages `sensobol` [@puy2022a], `data.table`
 \[@Dowle2020\] and `tidyverse` \[@wickham2019\] installed in your R
 environment to reproduce the results of this session. To install them,
 remove the hash character from the first line of the code snippet below
