@@ -309,16 +309,6 @@ Scatterplots of $y$ against $x_i$ also inform on which input may convey the most
   <strong> Take-home message: </strong> Scatterplots of $y$ against $x_i$ help the analyst identify patterns denoting sensitivity. In general, inputs showing more "shape" than the rest have a higher influence on $y$.
 </div>
 
-
-```{r ind_irri}
-
-ind <- sobol_indices(matrices = matrices, Y = y, N = N, params = params, boot = boot, R = R)
-
-ind
-```
-
-```{r plot_irr, fig.width=5, fig.height=5}
-plot(ind)
-```
+Scatterplots are often followed by a thorough SA, which is beyond the scope of this tutorial. Those interested in SA will find in @saltelli2008 and @puy2022a the information needed to become acquainted with variance-based SA (considered the gold standard in SA), and in @razavi2021 and @pianosi2016 an overview of the state of the art.
 
 # References
