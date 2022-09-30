@@ -1,7 +1,9 @@
 ---
 title: "Hands-on Uncertainty Analysis"
 author: "Arnald Puy"
-output: html_document
+output: 
+  pdf_document: default
+  html_notebook: default
 date: "26th October 2022"
 header-includes:
   - \usepackage[font=footnotesize]{caption}
@@ -33,21 +35,21 @@ library("tidyverse")
 
 ```
 
-# Uncertainty analysis
+# Uncertainty analysis (UA)
 
-An uncertainty analysis (UA) aims at quantifying how the uncertainty in the model inputs (e.g., in parameters, boundary conditions, mathematical formulations) affect the model output. Uncertainty can derive from measurement error, natural variation, inherent randomness or lack of knowledge (epistemic uncertainty). Often an uncertainty analysis goes alongside a sensitivity analysis (SA), which aims at informing which inputs convey the most uncertainty to the output [@saltelli2008]. Both UA/SA increase the transparency and quality of the modelling process and are especially recommended if the model aims at guiding decisions in the real world [@saltelli2020a].
+An uncertainty analysis (UA) aims at quantifying how the uncertainty in the model inputs (i.e., in parameters, boundary conditions, mathematical formulations) affects the model output. Uncertainty can derive from measurement error, natural variation, inherent randomness or lack of knowledge (epistemic uncertainty). Often an uncertainty analysis goes hand in hand with a sensitivity analysis (SA), which aims at informing which inputs convey the most uncertainty to the output [@saltelli2008]. Both UA/SA increase the transparency and quality of the modelling process and are especially recommended if the model aims at guiding decisions in the real world [@saltelli2020a].
 
-An uncertainty analysis requires the analyst to:
+An UA requires the analyst to:
 
 * Define which inputs of the model are treated as uncertain.
 
-* Design a sample matrix. This sample matrix will reflect your model's uncertain space and will be formed by $N$ rows and $k$ columns. $N$ is a number chosen by the analyst (often $N > 10,000$) and reflects the sample size, the number of times that the model will ran on different combination of values for the uncertain inputs, and $k$ reflects the number of uncertain inputs. 
+* Design a sample matrix. This sample matrix will be your model's uncertain space and will be formed by $N$ rows and $k$ columns. $N$ is a number chosen by the analyst (often $N > 10,000$) and reflects the sample size, the number of times that the model will by sampling different combination of values for the uncertain inputs, and $k$ reflects the number of uncertain inputs. 
 
 * Run the model throughout the sample matrix in order to get a vector with the model output.
 
-* Describe the uncertainty in the output with descriptive statistics (average value, median, quantiles, confidence intervals, etc) and appropriate plots.
+* Describe the uncertainty in the model output with descriptive statistics (average value, median, quantiles, confidence intervals, etc) and appropriate plots.
 
-Here we will show how to conduct an UA/SA analysis in the R environment. First, we define the main settings of the UA, which will remain the same throughout the exercise unless stated otherwise. We define the sample size as $N=2^7=128$, the required matrix as "A" (we will see later on what does this mean) and the type of sample matrix as "QRN", meaning that we will use quasi-random numbers to build the sample matrix (we will see why later on). 
+Here we will show how to conduct a simple UA/SA analysis in the R environment. First, we need to define the main settings of the UA, which will remain the same throughout the exercise unless stated otherwise. We define the sample size as $N=2^7=128$, the required matrix as $\bf{A}$ (we will see later on what does this mean) and the type of sample matrix as `QRN`, meaning that we will use quasi-random numbers to build the sample matrix (we will see why later on). 
 
 ```{r main_settings}
 
@@ -66,7 +68,7 @@ Now let us get into the meat of the matter.
 
 ## Dummy example (1)
 
-Let us start by assuming that our model has two uncertain inputs, which we will name $x_1$ and $x_2$:
+Let us start by assuming that our model has two uncertain inputs, which we name $x_1$ and $x_2$:
 
 ```{r params}
 params <- c("x1", "x2")
@@ -86,11 +88,11 @@ plot(mat[, "x1"], mat[, "x2"])
 
 ```
 
-Each row in the matrix just printed corresponds to a point in the plot. There are 128 rows, so we have 128 points. These points are your sampling points in the model's uncertain space, and can be thought of as coordinates. If you have a look at the first row of the matrix printed above, you will see that $x_1=x_2=0.5$: this means that the model will compute the output in that row by assuming that $x_1=x_2=0.5$. In the second row, the model will assume that $x_1=0.75$ and $x_2=0.25$, and so on until the 128th row.
+Each row in the matrix just printed corresponds to a point in the plot. There are 128 rows, so we have 128 points. These points are your sampling points in the model's uncertain space, and can be thought of as coordinates. If you have a look at the first row of the matrix printed above, you will see that $x_1=x_2=0.5$: this means that the model will compute the output in that row by assuming that $x_1=x_2=0.5$. In the second row, the model will assume that $x_1=0.75$ and $x_2=0.25$, and so on until the 128th row. At the end of the day, you will know which values your model output gets in each one of the sampling points.
 
-In this example we can graphically represent the model's uncertain space with a plane because our model has two dimensions and therefore is a two-dimensional model. The $x-$ and the $y$-axis in the plot represent the first and the second columns of the sample matrix. When dealing with $k$-dimensional models, where $k>3$, a graphical representation of the model's uncertain space like the one above is not possible because we live in a three-dimensional world!.
+In this example we can graphically represent the model's uncertain space with a plane because our model has two dimensions and therefore is a two-dimensional model. The $x-$ and the $y$-axis in the plot represent the first and the second columns of the sample matrix. When dealing with $k$-dimensional models, where $k>3$, a graphical representation of the model's uncertain space like the one above is not possible because we live in a three-dimensional world.
 
-We have built this sample matrix using Quasi-Random Numbers (QRN). But how does the sample matrix look like if we use another sampling method? Let us compare QRN with Latin Hypercube Sampling (LHS) and random numbers (R).
+We have built this sample matrix using Quasi-Random Numbers (QRN), a specific method to sample the unit hypercube that differs from other methods such as random numbers (R) or Latin Hypercube Sampling (LHS). Let us compare the three methods to see how they differ.
 
 First, we define a vector with the three different sampling methods available in `sensobol`.
 
@@ -122,12 +124,12 @@ lapply(prove, data.table) %>%
 Which differences do you see between the sampling space created by LHS, QRN and R?
 
 <div class="alert alert-info">
-  <strong>Take-home information: </strong> QRN is the preferred sampling method in uncertainty and sensitivity analysis because it leaves smaller unexplored volumes and hence maps more effectively the uncertain space. However, note that random methods might be better to compute sensitivity indices when the model under examination has important high-order terms [@kucherenko2011]. We will explore sensitivity analysis later on.
+  <strong>Take-home information: </strong> QRN is the preferred sampling method in UA/SA because it leaves smaller unexplored volumes and hence maps more effectively the uncertain space. However, note that random methods might be better to compute sensitivity indices when the model under examination has important high-order terms [@kucherenko2011]. We will explore SA later on.
 </div>
 
 ## Dummy example (2)
 
-In this example we will use a very simple model with three uncertain parameters. Let us first name our parameters $x_1$, $x_2$ and $x_3$:
+In this example we will use a very simple model with  three uncertain parameters. Let us first name our parameters $x_1$, $x_2$ and $x_3$:
 
 ```{r params2}
 
@@ -158,9 +160,9 @@ y <- dummy_fun(mat)
 y
 ```
 
-As you can see, the model output is a vector whose length equals the number of rows of the sample matrix, 128 in this case. Each element in the vector shows the output of the model after taking in specific combinations of $x_1$, $x_2$ and $x_3$ values.  
+As you can see, the model output is a vector whose length equals the number of rows of the sample matrix, 128 in this case. The first number in the vector is the model output produced when $x_1$, $x_2$ and $x_3$ take the values defined in the first row of the sampling matrix; the second number is the model output produced when $x_1$, $x_2$ and $x_3$ take the values defined in the second row of the sampling matrix; and so on. 
 
-With this vector we can conduct a proper uncertainty analysis of the model output. We can first visualize the distribution of the output with an histogram. This is easy to do with the `plot_uncertainty` function of the `sensobol` package:
+With this vector we can conduct a proper UA of the model output. We can first visualize the distribution of the output with an histogram. This is easy to do with the `plot_uncertainty` function of the `sensobol` package:
 
 ```{r plot_uncertainty1, fig.height=5, fig.width=5}
 
@@ -190,25 +192,25 @@ quantile(y)
 In this section we will conduct a full-fledged uncertainty analysis of one of the formulae used to model irrigation water withdrawals. This model requires information on the extension of irrigation, crop coefficient, evapotranspiration, precipitation and irrigation efficiency [@Puy2021b]. It reads as follows:
 
 $$y = \frac{A ( ET_c - P)}{E}\,,$$
-where $y$ represent irrigation water withdrawals [m$^3$], A is the extension of irrigation [m$^2$], $ET_c$ is the crop evapotranspiration [m], P is the precipitation [m] and $E$ is the irrigation efficiency [-].
+where $y$ represent irrigation water withdrawals [m$^3$], $A$ is the extension of irrigation [m$^2$], $ET_c$ is the crop evapotranspiration [m], $P$ is the precipitation [m] and $E$ is the irrigation efficiency [-].
 
 Let us assume that we do not know the exact value of any of these inputs, but that we have done our research and agreed that their uncertainty can be fairly approximated with the distributions presented in the Table 1 below.
 
 | Parameter | Description | Distribution |
 |:--------- | :-----------|:-------------|
 | $A$         | Irrigated area | $\mathcal{U}(15, 20)$ |
-| $ET_c$        | Crop evapotranspiration | $\mathcal{N}(0.4, 0.1)$ |
+| $ET_c$        | Crop evapotranspiration | $\mathcal{N}(0.4, 0.05)$ |
 | $P$        | Precipitation | $\mathcal{U}(0, 0.1)$ |
 | $E$        | Irrigation efficiency | $\mathcal{U}(0.4, 0.6)$ |
 
 Table: Table 1. Distribution of the uncertain inputs for the irrigation water withdrawal model.
 
-Furthermore, in this example we will slightly vary the settings because we will conduct an uncertainty jointly with a sensitivity analysis: firstly, we will increase the sample size to $N=2^{11}$ to ensure a thorough sampling of the uncertain space. Secondly, we will define a sampling design to conduct a variance-based sensitivity analysis with the most accurate estimators, @saltelli2010b for first-order indices and @jansen1999 for total-order indices. This requires a sampling design based on an $\bf{A}$, a $\bf{B}$ and a $\bf{A_B^{(i)}}$ matrices. An explanation of why is this design needed in variance-based SA is beyond the scope of this lecture and we direct the reader to @lopiano2021, @puy2022f and @puy2022a for further details. And thirdly, we will bootstrap the sensitivity indices 1000 times in order to get confidence intervals.
+Furthermore, in this example we will slightly vary the settings because we will conduct an UA jointly with a SA: firstly, we will increase the sample size to $N=2^{11}$ to ensure a thorough sampling of the uncertain space. Secondly, we will define a sampling design to conduct a variance-based sensitivity analysis with the most accurate estimators, @saltelli2010b for first-order indices and @jansen1999 for total-order indices. This requires a sampling design based on an $\bf{A}$, a $\bf{B}$ and a $\bf{A_B^{(i)}}$ matrices. An explanation of why is this design needed in variance-based SA is beyond the scope of this lecture and we direct the reader to @lopiano2021, @puy2022f and @puy2022a for further details. Finally, we will bootstrap the sensitivity indices 1000 times in order to get confidence intervals.
 
 ```{r setting2}
 
 # Sample size
-N <- 2^11
+N <- 2^12
 
 # Required matrices
 matrices <- c("A", "B", "AB")
@@ -241,12 +243,12 @@ Let us inspect the first five rows of the resulting matrix:
 head(mat)
 ```
 
-Note that, as with the other examples, all the inputs are uniformly distributed in $[0, 1]$. Since our inputs have other distributions (see table above), we need to apply a quantile transformation to bring each input to its appropriate distribution. This is done as follows:
+Note that all the inputs are uniformly distributed in $[0, 1]$. Since our inputs have other distributions (see table above), we need to apply a quantile transformation to bring each input to its appropriate distribution. This is done in `R` as follows:
 
 ```{r quantile}
 
 mat[, "A"] <- qunif(mat[, "A"], min = 15, max = 20) # for a uniform distribution.
-mat[, "ET_c"] <- qnorm(mat[, "ET_c"], mean = 0.4, sd = 0.1) # for a normal distribution.
+mat[, "ET_c"] <- qnorm(mat[, "ET_c"], mean = 0.4, sd = 0.05) # for a normal distribution.
 mat[, "P"] <- qunif(mat[, "P"], min = 0, max = 0.1)
 mat[, "E"] <- qunif(mat[, "E"], min = 0.4, max = 0.6)
 
@@ -259,6 +261,49 @@ Now let us plot the first five rows to inspect the resulting transformed matrix:
 head(mat)
 ```
 
-As you can see, the inputs are no longer distributed in $\mathcal{U}(0, 1)$, but follow the distributions listed in Table 1.
+The inputs are no longer distributed in $\mathcal{U}(0, 1)$, but follow the distributions listed in Table 1.
+
+We can now create a function that codes the irrigation model:
+
+```{r irri_mod}
+irrigation_fun <- function(mat) (mat[, "A"] * (mat[, "ET_c"] - mat[, "P"])) / mat[, "E"]
+
+```
+
+and run it throughout the sample matrix:
+
+```{r run_irrig}
+
+y <- irrigation_fun(mat)
+```
+
+Let us observe the distribution of the model output:
+
+```{r unc_irr}
+plot_uncertainty(N = N, Y = y) + 
+  geom_histogram(fill = "grey", color = "black") # This last line of code is just to fill the histogram with grey colour
+```
+
+...and compute a few statistics: we wrap the functions `min`, `max`, `mean` and `median` in a vector to make the code less verbose and execute one after the other:
+
+```{r stat_irr}
+f <- c(min, max, mean, median)
+sapply(f, function(f) f(y))
+```
+
+```{r scatter_irr}
+plot_scatter(data = mat, N = N, Y = y, params = params)
+```
+
+```{r ind_irri}
+
+ind <- sobol_indices(matrices = matrices, Y = y, N = N, params = params, boot = boot, R = R)
+
+ind
+```
+
+```{r plot_irr, fig.width=5, fig.height=5}
+plot(ind)
+```
 
 # References
