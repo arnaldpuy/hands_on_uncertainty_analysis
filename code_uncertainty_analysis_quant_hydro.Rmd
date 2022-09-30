@@ -167,7 +167,8 @@ With this vector we can conduct a proper UA of the model output. We can first vi
 ```{r plot_uncertainty1, fig.height=5, fig.width=5}
 
 plot_uncertainty(Y = y, N = N) + 
-  geom_histogram(fill = "grey", color = "black") # This last line of code is just to fill the histogram with grey colour
+  geom_histogram(fill = "grey", color = "black") # This last line of code is just to fill 
+# the histogram with grey colour.
 
 ```
 
@@ -281,7 +282,8 @@ Let us observe the distribution of the model output:
 
 ```{r unc_irr}
 plot_uncertainty(N = N, Y = y) + 
-  geom_histogram(fill = "grey", color = "black") # This last line of code is just to fill the histogram with grey colour
+  geom_histogram(fill = "grey", color = "black") # This last line of code is just to fill 
+# the histogram with grey colour
 ```
 
 ...and compute a few statistics: we wrap the functions `min`, `max`, `mean` and `median` in a vector to make the code less verbose and execute one after the other:
@@ -291,9 +293,22 @@ f <- c(min, max, mean, median)
 sapply(f, function(f) f(y))
 ```
 
+Note how the range goes from 4 m$^3$ to 24 m$^3$, with most values concentrating around 10 m$^3$ and 15 m$^3$. The extreme values on the right tail of the distribution are produced only by a few model runs, and we may be interested in knowing more about which settings in $A$, $ET_c$, $P$ and $E$ give rise to such extreme irrigation water withdrawals. 
+
+To that aim, we use the function `plot_scatter`, of the `sensobol` package. This function displays the model output $y$ against the $x_i$ parameter while showing the mean $y$ value.
+
 ```{r scatter_irr}
 plot_scatter(data = mat, N = N, Y = y, params = params)
 ```
+
+Note how the highest $y$ values are caused by the combination of high values in $A$ (the area under irrigation) and $ET_c$ (crop evapotranspiration), and low values in $P$ (precipitation) and $E$ (irrigation efficiency). This makes sense, as larger, poorly-efficient irrigated areas in drier environments with water stressed crops will tend to demand more water.
+
+Scatterplots of $y$ against $x_i$ also inform on which input may convey the most uncertainty to the model output, which is one of the aims of SA. Which input do you think is the most influential in this case? 
+
+<div class="alert alert-info">
+  <strong> Take-home message: </strong> Scatterplots of $y$ against $x_i$ help the analyst identify patterns denoting sensitivity. In general, inputs showing more "shape" than the rest have a higher influence on $y$.
+</div>
+
 
 ```{r ind_irri}
 
