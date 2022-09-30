@@ -43,13 +43,13 @@ An UA requires the analyst to:
 
 * Define which inputs of the model are treated as uncertain.
 
-* Design a sample matrix. This sample matrix will be your model's uncertain space and will be formed by $N$ rows and $k$ columns. $N$ is a number chosen by the analyst (often $N > 10,000$) and reflects the sample size, the number of times that the model will by sampling different combination of values for the uncertain inputs, and $k$ reflects the number of uncertain inputs. 
+* Design a sample matrix. This sample matrix will be your model's uncertain space and will be formed by $N$ rows and $k$ columns. $N$ is a number chosen by the analyst (often $N > 10,000$) and is the sample size, that is, the number of times that the model will run on different combination of values for the uncertain inputs. As for $k$, it reflects the number of uncertain inputs. 
 
-* Run the model throughout the sample matrix in order to get a vector with the model output.
+* Run the model in the sample matrix to get a numeric vector with the model output.
 
-* Describe the uncertainty in the model output with descriptive statistics (average value, median, quantiles, confidence intervals, etc) and appropriate plots.
+* Analyze the uncertainty in the model output with descriptive statistics (average value, median, quantiles, confidence intervals, etc) and appropriate plots.
 
-Here we will show how to conduct a simple UA/SA analysis in the R environment. First, we need to define the main settings of the UA, which will remain the same throughout the exercise unless stated otherwise. We define the sample size as $N=2^7=128$, the required matrix as $\bf{A}$ (we will see later on what does this mean) and the type of sample matrix as `QRN`, meaning that we will use quasi-random numbers to build the sample matrix (we will see why later on). 
+Here we will show how to conduct a simple UA analysis in the R environment. First, we need to define the main settings of the UA, which will remain the same throughout the exercise unless stated otherwise. We define the sample size as $N=2^7=128$, the required matrix as $\bf{A}$ (this is related to SA and hence beyond the scope of the tutorial, check @puy2022a for further information), and the type of sample matrix as `QRN`, meaning that we will use quasi-random numbers to build the sample matrix (we will see why later on). 
 
 ```{r main_settings}
 
@@ -206,24 +206,12 @@ Let us assume that we do not know the exact value of any of these inputs, but th
 
 Table: Table 1. Distribution of the uncertain inputs for the irrigation water withdrawal model.
 
-Furthermore, in this example we will slightly vary the settings because we will conduct an UA jointly with a SA: firstly, we will increase the sample size to $N=2^{11}$ to ensure a thorough sampling of the uncertain space. Secondly, we will define a sampling design to conduct a variance-based sensitivity analysis with the most accurate estimators, @saltelli2010b for first-order indices and @jansen1999 for total-order indices. This requires a sampling design based on an $\bf{A}$, a $\bf{B}$ and a $\bf{A_B^{(i)}}$ matrices. An explanation of why is this design needed in variance-based SA is beyond the scope of this lecture and we direct the reader to @lopiano2021, @puy2022f and @puy2022a for further details. Finally, we will bootstrap the sensitivity indices 1000 times in order to get confidence intervals.
+In this example we will increase the sample size to $N=2^{12}$ to ensure a thorough sampling of the uncertain space:
 
 ```{r setting2}
 
 # Sample size
 N <- 2^12
-
-# Required matrices
-matrices <- c("A", "B", "AB")
-
-# Type of sample matrix
-type <- "QRN"
-
-# Bootstrap
-boot <- TRUE
-
-# Number of bootstrap samples
-R <- 10^3
 ```
 
 As in the previous examples, we first define a vector with the name of our uncertain inputs: 
