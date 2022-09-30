@@ -3,7 +3,7 @@ title: "Hands-on Uncertainty Analysis"
 author: "Arnald Puy"
 output: 
   pdf_document: default
-  html_notebook: default
+  html_document: default
 date: "26th October 2022"
 header-includes:
   - \usepackage[font=footnotesize]{caption}
