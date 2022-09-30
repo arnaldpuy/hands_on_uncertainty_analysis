@@ -23,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Install and load required packages
-You should have the packages `sensobol` [@puy2022a], `data.table` [@Dowle2020] and `tidyverse` [@wickham2019] installed in your R environment to reproduce the results of this session. To install them, remove the hash character from the first line of the code snippet below and run the code.
+You should have the packages `sensobol` [@puy2022a], `data.table` [@Dowle2020] and `tidyverse` [@wickham2019] installed in your R environment to reproduce the results of this tutorial. To install them, remove the hash character from the first line of the code snippet below and run the code.
 
 ```{r, results="hide", message=FALSE, warning=FALSE}
 
@@ -90,9 +90,9 @@ plot(mat[, "x1"], mat[, "x2"])
 
 Each row in the matrix just printed corresponds to a point in the plot. There are 128 rows, so we have 128 points. These points are your sampling points in the model's uncertain space, and can be thought of as coordinates. If you have a look at the first row of the matrix printed above, you will see that $x_1=x_2=0.5$: this means that the model will compute the output in that row by assuming that $x_1=x_2=0.5$. In the second row, the model will assume that $x_1=0.75$ and $x_2=0.25$, and so on until the 128th row. At the end of the day, you will know which values your model output gets in each one of the sampling points.
 
-In this example we can graphically represent the model's uncertain space with a plane because our model has two dimensions and therefore is a two-dimensional model. The $x-$ and the $y$-axis in the plot represent the first and the second columns of the sample matrix. When dealing with $k$-dimensional models, where $k>3$, a graphical representation of the model's uncertain space like the one above is not possible because we live in a three-dimensional world.
+In this example we can graphically represent the model's uncertain space with a plane because our model has two dimensions and therefore is a two-dimensional model. The $x-$ and the $y$-axis in the plot represent the first and the second column of the sample matrix. When dealing with $k$-dimensional models, where $k>3$, a graphical representation of the model's uncertain space like the one above is not possible -- we only live in a three-dimensional world!
 
-We have built this sample matrix using Quasi-Random Numbers (QRN), a specific method to sample the unit hypercube that differs from other methods such as random numbers (R) or Latin Hypercube Sampling (LHS). Let us compare the three methods to see how they differ.
+We have built this sample matrix using quasi-random numbers (QRN), a specific method to sample the unit hypercube that differs from other methods such as random numbers (R) or Latin Hypercube Sampling (LHS). Let us compare these three methods to see how they differ.
 
 First, we define a vector with the three different sampling methods available in `sensobol`.
 
@@ -124,7 +124,7 @@ lapply(prove, data.table) %>%
 Which differences do you see between the sampling space created by LHS, QRN and R?
 
 <div class="alert alert-info">
-  <strong>Take-home information: </strong> QRN is the preferred sampling method in UA/SA because it leaves smaller unexplored volumes and hence maps more effectively the uncertain space. However, note that random methods might be better to compute sensitivity indices when the model under examination has important high-order terms [@kucherenko2011]. We will explore SA later on.
+  <strong>Take-home information: </strong> QRN is the preferred sampling method in UA/SA because it leaves smaller unexplored volumes and hence maps more effectively the uncertain space. However, note that random methods might be better to compute sensitivity indices when the model under examination has important high-order terms [@kucherenko2011].
 </div>
 
 ## Dummy example (2)
@@ -146,17 +146,17 @@ mat <- sobol_matrices(matrices = matrices, N = N, params = params, type = type)
 We now define the model. We will use a very simple polynomial:
 
 $$y = 3x_1^2 + 2x_1x_2 -2x_3$$
-In the next code snippet we code the polynomial in a function, which we label `dummy_fun`. Note that the function needs to be coded as to run rowwise throughout the sample matrix. 
+In the next code snippet we code the polynomial in a function, which we label `polynomial_fun`. Note that the function needs to be coded as to run rowwise throughout the sample matrix. 
 
 ```{r model}
 
-dummy_fun <- function(mat) 3 * mat[, "x1"]^2 + 2 * mat[, "x1"] * mat[, "x2"] - 2 * mat[, "x3"]
+polynomial_fun <- function(mat) 3 * mat[, "x1"]^2 + 2 * mat[, "x1"] * mat[, "x2"] - 2 * mat[, "x3"]
 ```
 
 We execute the model in the sample matrix and print the output.
 
 ```{r run_model1}
-y <- dummy_fun(mat)
+y <- polynomial_fun(mat)
 y
 ```
 
@@ -167,7 +167,7 @@ With this vector we can conduct a proper UA of the model output. We can first vi
 ```{r plot_uncertainty1, fig.height=5, fig.width=5}
 
 plot_uncertainty(Y = y, N = N) + 
-  geom_histogram(fill = "grey", color = "black") # This last line of code is just to fill 
+  geom_histogram(fill = "grey", color = "black") # to fill 
 # the histogram with grey colour.
 
 ```
@@ -190,12 +190,12 @@ quantile(y)
 
 ## An hydrological example: calculation of irrigation water withdrawals
 
-In this section we will conduct a full-fledged uncertainty analysis of one of the formulae used to model irrigation water withdrawals. This model requires information on the extension of irrigation, crop coefficient, evapotranspiration, precipitation and irrigation efficiency [@Puy2021b]. It reads as follows:
+In this section we will conduct a full-fledged uncertainty analysis of one of the formulae used to model irrigation water withdrawals. This model requires information on the extension of irrigation, crop coefficient, evapotranspiration, precipitation and irrigation efficiency [@Puy2021b]. In its most simplified form it reads as follows:
 
 $$y = \frac{A ( ET_c - P)}{E}\,,$$
-where $y$ represent irrigation water withdrawals [m$^3$], $A$ is the extension of irrigation [m$^2$], $ET_c$ is the crop evapotranspiration [m], $P$ is the precipitation [m] and $E$ is the irrigation efficiency [-].
+where $y$ represents irrigation water withdrawals [m$^3$], $A$ is the extension of irrigation [m$^2$], $ET_c$ is the crop evapotranspiration [m], $P$ is the precipitation [m] and $E$ is the irrigation efficiency [-].
 
-Let us assume that we do not know the exact value of any of these inputs, but that we have done our research and agreed that their uncertainty can be fairly approximated with the distributions presented in the Table 1 below.
+Let us assume that we do not know the exact value of any of these inputs, but that we have done our research and agreed that their uncertainty can be fairly approximated with the distributions presented in Table 1 below.
 
 | Parameter | Description | Distribution |
 |:--------- | :-----------|:-------------|
@@ -232,7 +232,7 @@ Let us inspect the first five rows of the resulting matrix:
 head(mat)
 ```
 
-Note that all the inputs are uniformly distributed in $[0, 1]$. Since our inputs have other distributions (see table above), we need to apply a quantile transformation to bring each input to its appropriate distribution. This is done in `R` as follows:
+Note that all the inputs are uniformly distributed in $[0, 1]$. Since our inputs have other distributions (see Table 1 above), we need to apply a quantile transformation to bring each input to its appropriate distribution. This is done in `R` as follows:
 
 ```{r quantile}
 
@@ -270,7 +270,7 @@ Let us observe the distribution of the model output:
 
 ```{r unc_irr}
 plot_uncertainty(N = N, Y = y) + 
-  geom_histogram(fill = "grey", color = "black") # This last line of code is just to fill 
+  geom_histogram(fill = "grey", color = "black") # to fill 
 # the histogram with grey colour
 ```
 
@@ -283,13 +283,13 @@ sapply(f, function(f) f(y))
 
 Note how the range goes from 4 m$^3$ to 24 m$^3$, with most values concentrating around 10 m$^3$ and 15 m$^3$. The extreme values on the right tail of the distribution are produced only by a few model runs, and we may be interested in knowing more about which settings in $A$, $ET_c$, $P$ and $E$ give rise to such extreme irrigation water withdrawals. 
 
-To that aim, we use the function `plot_scatter`, of the `sensobol` package. This function displays the model output $y$ against the $x_i$ parameter while showing the mean $y$ value.
+To that aim, we use the function `plot_scatter`, of the `sensobol` package. This function displays the model output $y$ against each of the uncertain parameters while showing the mean $y$ value in red.
 
 ```{r scatter_irr}
 plot_scatter(data = mat, N = N, Y = y, params = params)
 ```
 
-Note how the highest $y$ values are caused by the combination of high values in $A$ (the area under irrigation) and $ET_c$ (crop evapotranspiration), and low values in $P$ (precipitation) and $E$ (irrigation efficiency). This makes sense, as larger, poorly-efficient irrigated areas in drier environments with water stressed crops will tend to demand more water.
+Note how the most extreme $y$ values are caused by the combination of high values in $A$ (the area under irrigation) and $ET_c$ (crop evapotranspiration), and low values in $P$ (precipitation) and $E$ (irrigation efficiency). This makes sense, as larger, poorly-efficient irrigated areas in drier environments with water stressed crops will tend to demand more water.
 
 Scatterplots of $y$ against $x_i$ also inform on which input may convey the most uncertainty to the model output, which is one of the aims of SA. Which input do you think is the most influential in this case? 
 
@@ -297,6 +297,6 @@ Scatterplots of $y$ against $x_i$ also inform on which input may convey the most
   <strong> Take-home message: </strong> Scatterplots of $y$ against $x_i$ help the analyst identify patterns denoting sensitivity. In general, inputs showing more "shape" than the rest have a higher influence on $y$.
 </div>
 
-Scatterplots are often followed by a thorough SA, which is beyond the scope of this tutorial. Those interested in SA will find in @saltelli2008 and @puy2022a the information needed to become acquainted with variance-based SA (considered the gold standard in SA), and in @razavi2021 and @pianosi2016 an overview of the state of the art.
+Scatterplots are often followed by a thorough SA, which is beyond the scope of this tutorial. Those interested in SA will find in @saltelli2008 and @puy2022a the information needed to become acquainted with variance-based SA (considered the gold standard in SA), and in @razavi2021 and @pianosi2016 an overview of the state of the art in SA.
 
 # References
